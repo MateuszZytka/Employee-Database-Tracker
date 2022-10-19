@@ -8,6 +8,7 @@ const cTable = require('console.table');
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
+
 const db = mysql.createConnection(
     {
       host: 'localhost',
@@ -21,8 +22,7 @@ const db = mysql.createConnection(
   );
 
 const start = async () => {
-    let choice;
-    while(true) {
+    let choice
         await inquirer.prompt
         ([
             {
@@ -33,7 +33,6 @@ const start = async () => {
             }
         ])
         .then((answer) => {
-            console.log(answer.command);
             choice = answer.command;
         })
         switch (choice){
@@ -58,92 +57,159 @@ const start = async () => {
             case "update an employee role":
                 updateEmployee()
                 break;
+            case "quit":
+                console.log("Succesfully ended application.")
+                break
             
         }
-        if (choice === "quit"){
-            break
-        }
     }
-}
 
 function viewDeparments(){
-    app.get("/api/departments", (req, res) => {
         db.query("SELECT * FROM department", function(err, results){
-            res.json(results)
             console.table(results)
+            start()
         })
-    })
 }
 
 function viewRoles(){
-    app.get("/api/roles", (req, res) => {
         db.query("SELECT * FROM role", function(err, results){
-            res.json(results)
             console.table(results)
+            start()
         })
-    })
 }
 
 function viewEmployees(){
-    app.get("/api/employees", (req, res) => {
         db.query("SELECT * FROM employee", function(err, results){
-            res.json(results)
             console.table(results)
+            start()
         })
-    })
 }
 
-function addDepartment(){
-    app.post("/api/add-department", ({body}, res) => {
-        let params = body.name
-        db.query("INSERT INTO department(name) VALUES (?)", params, function(err, results){
+function addDepartment () {
+    inquirer
+    .prompt(
+        {
+            name: "department",
+            type: "input",
+            message: "Enter the name of the department you would like to add:"
+        }
+    ).then((answer) => {
+        let params = answer.department
+        db.query("INSERT INTO department (name) VALUES (?)", params, function(err, results){
             if (err) {
-                res.status(400).json({error: err.message})
+                console.log(err)
                 return
             } 
-            res.json({body})
-            console.log({body})
+            console.log("Department added to database")
+            start()
         })
     })
 }
 
 function addRole() {
-    app.post("/api/add-role", ({body}, res) => {
-        let title = body.title
-        let salary = body.salary
-        let department_id = body.department_id
+    inquirer
+    .prompt(
+        [
+            {
+                name: "name",
+                type: "input",
+                message: "Enter the name for the new role:"
+            },
+            {
+                name: "salary",
+                type: "input",
+                message: "Enter the salary for the new role:"
+            },
+            {
+                name: "department",
+                type: "list",
+                message: "Enter the department the role belongs to:",
+                choices: departments
+            }
+        ]
+    ).then((answers) => {
+        let title = answers.name
+        let salary = answers.salary
+        let department_id = answers.department
         db.query("INSERT INTO role(title, salary, department_id) VALUES (?, ?, ?)", [title, salary, department_id], function(err, results){
             if (err) {
                 res.status(400).json({error: err.message})
                 return
             } 
-            res.json({body})
-            console.log({body})
+            console.log("Role added to database")
         })
     })
 }
 
 function addEmployee(){
-    app.post("/api/add-employee", ({body}, res) => {
-        let first_name = body.first_name
-        let last_name = body.last_name
-        let role_id = body.role_id
-        let manager_id = body.manager_id
-        db.query("INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)", [first_name, last_name, role_id, manager_id], function(err, results){
+    inquirer
+    .prompt(
+        [
+            {
+                name: "first_name",
+                type: "input",
+                message: "Enter the employee's first name"
+            },
+            {
+                name: "last_name",
+                type: "input",
+                message: "Enter the employee's last name"
+            },
+            {
+                name: "role",
+                type: "input",
+                message: "Enter the employee's role"
+            },
+            {
+                name: "manager",
+                type: "input",
+                message: "Enter the employee's manager"
+            }
+        ]
+    ).then((answers) => {
+        let fname = answers.first_name
+        let lname = answers.last_name
+        let roleID = answers.role
+        let managerID = answers.manager
+        db.query("INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)", [fname, lname, roleID, managerID], function(err, results){
             if (err) {
                 res.status(400).json({error: err.message})
                 return
             } 
-            res.json({body})
-            console.log({body})
+            console.log("Employee Added to Database")
         })
     })
 }
-// to do create update function
-function updateEmployee(){
-    
-}
 
+function updateEmployee(){
+    inquirer
+    .prompt(
+        [
+            {
+                name: "employee",
+                type: "list",
+                message: "Which employee's role would you like to update?",
+                choices: employee
+            },
+            {
+                name: "role",
+                type: "list",
+                message: "Which role would you like to assign to the selected employee",
+                choices: role
+            }
+        ]
+    ).then((answers) => {
+    let roleID = answers.role
+    db.query("UPDATE EMPLOYEE SET role_id = (?)", roleID, (err, results) => {
+        if (err){
+            res.status(400).json({error: err.message})
+                return
+        }
+        console.log("Employee updated.")
+    })
+    })
+}
+start()
 // app.post("/api/add-department", ({body}, res) => {
 //     let params = body.name
 //     db.query("INSERT INTO department(name) VALUES (?)", params, function(err, results){
@@ -206,8 +272,6 @@ function updateEmployee(){
 //         console.table(results)
 //     })
 // })
-
-
 
 
 

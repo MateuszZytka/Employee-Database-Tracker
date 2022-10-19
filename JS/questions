@@ -1,0 +1,75 @@
+// need to get list from database for departments, employee and role
+
+const questions = [
+    {
+        name: "command",
+        type: "list",
+        message: "What would you like to do?",
+        choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role"]
+    }
+]
+
+const addRole = [
+    {
+        name: "name",
+        type: "input",
+        message: "Enter the name for the role:"
+    },
+    {
+        name: "salary",
+        type: "input",
+        message: "Enter the salary for the role:"
+    },
+    {
+        name: "department",
+        type: "input",
+        message: "Enter the department the role belongs to:",
+        choices: departments
+    }
+]
+
+const addEmployee = [
+    {
+        name: "first_name",
+        type: "input",
+        message: "Enter the employee's first name"
+    },
+    {
+        name: "last_name",
+        type: "input",
+        message: "Enter the employee's last name"
+    },
+    {
+        name: "role",
+        type: "input",
+        message: "Enter the employee's role"
+    },
+    {
+        name: "manager",
+        type: "input",
+        message: "Enter the employee's manager"
+    }
+]
+
+const addDepartment = [
+    {
+        name: "deparment",
+        type: "input",
+        message: "enter the departmant you would like to add:"
+    }
+]
+
+const updateEmployee = [
+    {
+        name: "employee",
+        type: "list",
+        message: "Which employee's role would you like to update?",
+        choices: employee
+    },
+    {
+        name: "role",
+        type: "list",
+        message: "Which role would you like to assign to the selected employee",
+        choices: role
+    }
+]

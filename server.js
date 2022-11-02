@@ -72,14 +72,14 @@ function viewDeparments(){
 }
 
 function viewRoles(){
-        db.query("SELECT * FROM role", function(err, results){
+        db.query("select role.id as ID, role.title as title, role.salary as Salary, department.name as Department FROM role JOIN department on role.department_id = department.id", function(err, results){
             console.table(results)
             start()
         })
 }
 
 function viewEmployees(){
-        db.query("SELECT * FROM employee", function(err, results){
+        db.query("SELECT employee.id as id, employee.first_name as 'First Name', employee.last_name as 'Last Name', title as 'Title', salary as Salary, name as Department, CONCAT(e.first_name, ' ', e.last_name) as Manager FROM employee JOIN role r on employee.role_id = r.id JOIN department d on d.id = r.department_id LEFT JOIN employee e on employee.manager_id = e.id", function(err, results){
             console.table(results)
             start()
         })
@@ -107,6 +107,12 @@ function addDepartment () {
 }
 
 function addRole() {
+    let department =[]
+    db.query("select name from department", function (err, results){
+        for(let i =0; i < results.length; i++){
+        department.push(results[i].name)
+    }
+    })
     inquirer
     .prompt(
         [
@@ -124,25 +130,39 @@ function addRole() {
                 name: "department",
                 type: "list",
                 message: "Enter the department the role belongs to:",
-                choices: departments
+                choices: department
             }
         ]
     ).then((answers) => {
         let title = answers.name
         let salary = answers.salary
-        let department_id = answers.department
-        db.query("INSERT INTO role(title, salary, department_id) VALUES (?, ?, ?)", [title, salary, department_id], function(err, results){
+        db.query("INSERT INTO role(title, salary, department_id) VALUES (?, ?, ?)", [title, salary, (department.indexOf(answers.department) + 1)], function(err, results){
             if (err) {
-                res.status(400).json({error: err.message})
+                console.log(err)
                 return
             } 
             console.log("Role added to database")
+            start()
         })
     })
 }
 
-function addEmployee(){
-    inquirer
+// to do add employee
+async function addEmployee(){
+    let employee = []
+    let role = []
+    db.query("select title from role", function (err, results) {
+        for(let i =0; i <results.length; i++){
+            role.push(results[i].title)
+          } 
+          return role
+      })
+    db.query(`select concat(first_name, " ", last_name) AS Employee from employee`, function (err, results){
+        for(let i =0; i <results.length; i++){
+            employee.push(results[i].Employee)
+        } return employee
+    })
+    await inquirer
     .prompt(
         [
             {
@@ -157,34 +177,55 @@ function addEmployee(){
             },
             {
                 name: "role",
-                type: "input",
-                message: "Enter the employee's role"
+                type: "list",
+                message: "Enter the employee's role",
+                choices: role
             },
             {
                 name: "manager",
-                type: "input",
-                message: "Enter the employee's manager"
+                type: "list",
+                message: "Enter the employee's manager",
+                choices: employee
             }
         ]
     ).then((answers) => {
         let fname = answers.first_name
         let lname = answers.last_name
-        let roleID = answers.role
-        let managerID = answers.manager
+        let roleID = (role.indexOf(answers.role) + 1)
+        let managerID = (employee.indexOf(answers.manager) + 1)
+        console.log(answers.employee)
         db.query("INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)", [fname, lname, roleID, managerID], function(err, results){
             if (err) {
-                res.status(400).json({error: err.message})
-                return
-            } 
+                console.log(err)
+            } else {
             console.log("Employee Added to Database")
+            start()}
         })
     })
 }
 
 function updateEmployee(){
+    let employee = []
+    let role = []
+    db.query(`select concat(first_name, " ", last_name) AS Employee from employee`, function (err, results){
+    for(let i =0; i <results.length; i++){
+        employee.push(results[i].Employee)
+    }
+    })
+    db.query("select title from role", function (err, results) {
+      for(let i =0; i <results.length; i++){
+          role.push(results[i].title)
+        }    
+    })
+
     inquirer
     .prompt(
         [
+            {
+                name: "confirm",
+                type: "confirm",
+                message: "confirm to add employee"
+            },
             {
                 name: "employee",
                 type: "list",
@@ -199,81 +240,19 @@ function updateEmployee(){
             }
         ]
     ).then((answers) => {
-    let roleID = answers.role
-    db.query("UPDATE EMPLOYEE SET role_id = (?)", roleID, (err, results) => {
+        let role_id = (role.indexOf(answers.role) + 1)
+        let employee_id = (employee.indexOf(answers.employee) + 1)
+    db.query("UPDATE EMPLOYEE SET role_id = (?) where id = (?)", [role_id, employee_id], (err, results) => {
         if (err){
             res.status(400).json({error: err.message})
                 return
         }
         console.log("Employee updated.")
+        start()
     })
     })
 }
 start()
-// app.post("/api/add-department", ({body}, res) => {
-//     let params = body.name
-//     db.query("INSERT INTO department(name) VALUES (?)", params, function(err, results){
-//         if (err) {
-//             res.status(400).json({error: err.message})
-//             return
-//         } 
-//         res.json({body})
-//         console.log({body})
-//     })
-// })
-
-// app.post("/api/add-role", ({body}, res) => {
-//     let title = body.title
-//     let salary = body.salary
-//     let department_id = body.department_id
-//     db.query("INSERT INTO role(title, salary, department_id) VALUES (?, ?, ?)", [title, salary, department_id], function(err, results){
-//         if (err) {
-//             res.status(400).json({error: err.message})
-//             return
-//         } 
-//         res.json({body})
-//         console.log({body})
-//     })
-// })
-
-// app.post("/api/add-employee", ({body}, res) => {
-//     let first_name = body.first_name
-//     let last_name = body.last_name
-//     let role_id = body.role_id
-//     let manager_id = body.manager_id
-//     db.query("INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)", [first_name, last_name, role_id, manager_id], function(err, results){
-//         if (err) {
-//             res.status(400).json({error: err.message})
-//             return
-//         } 
-//         res.json({body})
-//         console.log({body})
-//     })
-// })
-
-
-// app.get("/api/departments", (req, res) => {
-//     db.query("SELECT * FROM department", function(err, results){
-//         res.json(results)
-//         console.table(results)
-//     })
-// })
-
-// app.get("/api/roles", (req, res) => {
-//     db.query("SELECT * FROM role", function(err, results){
-//         res.json(results)
-//         console.table(results)
-//     })
-// })
-
-// app.get("/api/employees", (req, res) => {
-//     db.query("SELECT * FROM employee", function(err, results){
-//         res.json(results)
-//         console.table(results)
-//     })
-// })
-
-
 
 
 app.listen(PORT, () => console.log)
